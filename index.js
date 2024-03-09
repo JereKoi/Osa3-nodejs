@@ -3,10 +3,14 @@ const app = express();
 
 const PORT = 3001;
 
-const persons = [
+let persons = [
   { id: 1, name: "Arto Hellas", number: "040-123456" },
-  { id: 2, name: "John Doe", number: "050-987654" }
+  { id: 2, name: "John Doe", number: "050-987654" },
+  { id: 3, name: "John Cena", number: "050-95434354455" },
+  { id: 4, name: "Pertti Mäki", number: "050-982344235" }
 ];
+
+app.use(express.json());
 
 app.get('/api/persons', (req, res) => {
   res.json(persons);
@@ -26,6 +30,12 @@ app.get('/api/persons/:id', (req, res) => {
   } else {
     res.status(404).end();
   }
+});
+
+app.delete('/api/persons/:id', (req, res) => {
+  const id = Number(req.params.id);
+  persons = persons.filter(person => person.id !== id);
+  res.status(204).end();
 });
 
 app.listen(PORT, () => {
