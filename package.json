@@ -6,11 +6,13 @@
   "version": "1.0.0",
   "main": "index.js",
   "devDependencies": {
+    "kill-port": "^2.0.1",
     "nodemon": "^3.1.0"
   },
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "stop": "kill-port 3001"
   },
   "keywords": [],
   "author": "",
