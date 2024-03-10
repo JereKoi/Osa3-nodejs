@@ -1,7 +1,17 @@
 const express = require('express');
-const app = express();
+const morgan = require('morgan');
 
+const app = express();
 const PORT = 3001;
+
+// Mukautettu tokeni, joka palauttaa pyynnön tiedot JSON-muodossa
+morgan.token('req-body', (req, res) => JSON.stringify(req.body));
+
+// Käytä morgania ja aseta haluttu loggausformaatti
+app.use(morgan(':method :url :status :res[content-length] - :response-time ms :req-body'));
+
+// Lisätään middleware, joka parsii requestin bodyn JSON-formaatista
+app.use(express.json());
 
 let persons = [
   { id: 1, name: "Arto Hellas", number: "040-123456" },
@@ -10,32 +20,32 @@ let persons = [
   { id: 4, name: "Pertti Mäki", number: "050-982344235" }
 ];
 
-app.use(express.json());
-
 app.get('/api/persons', (req, res) => {
   res.json(persons);
 });
 
-app.get('/info', (req, res) => {
-  const requestTime = new Date();
-  const numberOfPersons = persons.length;
-  res.send(`<p>Phonebook has info for ${numberOfPersons} people</p><p>${requestTime}</p>`);
-});
+// Lisää uusi puhelintieto
+app.post('/api/persons', (req, res) => {
+  const body = req.body;
 
-app.get('/api/persons/:id', (req, res) => {
-  const id = Number(req.params.id);
-  const person = persons.find(person => person.id === id);
-  if (person) {
-    res.json(person);
-  } else {
-    res.status(404).end();
+  if (!body.name || !body.number) {
+    return res.status(400).json({ error: 'name or number is missing' });
   }
-});
 
-app.delete('/api/persons/:id', (req, res) => {
-  const id = Number(req.params.id);
-  persons = persons.filter(person => person.id !== id);
-  res.status(204).end();
+  if (persons.some(person => person.name === body.name)) {
+    return res.status(400).json({ error: 'name must be unique' });
+  }
+
+  // Generoidaan uniikki id
+  const id = Math.floor(Math.random() * 1000000);
+  const person = {
+    id: id,
+    name: body.name,
+    number: body.number
+  };
+
+  persons = persons.concat(person);
+  res.json(person);
 });
 
 app.listen(PORT, () => {
