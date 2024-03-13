@@ -1,8 +1,9 @@
 const express = require('express');
 const morgan = require('morgan');
+const cors = require('cors')
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001
 
 // Mukautettu tokeni, joka palauttaa pyynnön tiedot JSON-muodossa
 morgan.token('req-body', (req, res) => JSON.stringify(req.body));
@@ -12,6 +13,11 @@ app.use(morgan(':method :url :status :res[content-length] - :response-time ms :r
 
 // Lisätään middleware, joka parsii requestin bodyn JSON-formaatista
 app.use(express.json());
+
+app.use(express.static('dist'))
+
+//Lisätään cors domainten välistä keskustelua varten
+app.use(cors())
 
 let persons = [
   { id: 1, name: "Arto Hellas", number: "040-123456" },
