@@ -1,38 +1,18 @@
 require("dotenv").config(); // Load environment variables
+require("./mongo");
 const express = require("express");
 const morgan = require("morgan");
 const cors = require("cors");
 const mongoose = require("mongoose"); // Import mongoose
+const Person = require("./person"); // Import Person model from person.js
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const url = process.env.MONGODB_URI;
-console.log("Connecting to MongoDB:", url);
-
-mongoose
-  .connect(url, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => {
-    console.log("Connected to MongoDB");
-  })
-  .catch((error) => {
-    console.error("Error connecting to MongoDB:", error.message);
-  });
 
 app.use(morgan("tiny"));
 app.use(cors());
 app.use(express.json());
 app.use(express.static("dist"));
-
-// Define Person schema and model
-const personSchema = new mongoose.Schema({
-  name: String,
-  number: String,
-});
-
-const Person = mongoose.model("Person", personSchema);
 
 app.get("/api/persons", (req, res, next) => {
   Person.find({})
