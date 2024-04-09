@@ -1,8 +1,11 @@
 {
   "dependencies": {
     "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
     "express": "^4.18.3",
     "json-server": "^1.0.0-alpha.23",
+    "mongodb": "^6.5.0",
+    "mongoose": "^8.3.1",
     "morgan": "^1.10.0"
   },
   "name": "osa3-nodejs",
@@ -16,7 +19,7 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "stop": "kill-port 3001",
-"server": "json-server -p3001 --watch db.json"
+    "server": "json-server -p3001 --watch db.json"
   },
   "keywords": [],
   "author": "",

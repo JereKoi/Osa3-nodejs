@@ -1,57 +1,96 @@
-const express = require('express');
-const morgan = require('morgan');
-const cors = require('cors')
+require("dotenv").config(); // Load environment variables
+const express = require("express");
+const morgan = require("morgan");
+const cors = require("cors");
+const mongoose = require("mongoose"); // Import mongoose
 
 const app = express();
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT || 3001;
+const url = process.env.MONGODB_URI;
+console.log("Connecting to MongoDB:", url);
 
-// Mukautettu tokeni, joka palauttaa pyynnön tiedot JSON-muodossa
-morgan.token('req-body', (req, res) => JSON.stringify(req.body));
+mongoose
+  .connect(url, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => {
+    console.log("Connected to MongoDB");
+  })
+  .catch((error) => {
+    console.error("Error connecting to MongoDB:", error.message);
+  });
 
-// Käytä morgania ja aseta haluttu loggausformaatti
-app.use(morgan(':method :url :status :res[content-length] - :response-time ms :req-body'));
-
-// Lisätään middleware, joka parsii requestin bodyn JSON-formaatista
+app.use(morgan("tiny"));
+app.use(cors());
 app.use(express.json());
+app.use(express.static("dist"));
 
-app.use(express.static('dist'))
-
-//Lisätään cors domainten välistä keskustelua varten
-app.use(cors())
-
-let persons = [
-  { id: 1, name: "Arto Hellas", number: "040-123456" },
-  { id: 2, name: "John Doe", number: "050-987654" },
-  { id: 3, name: "John Cena", number: "050-95434354455" },
-  { id: 4, name: "Pertti Mäki", number: "050-982344235" }
-];
-
-app.get('/api/persons', (req, res) => {
-  res.json(persons);
+// Define Person schema and model
+const personSchema = new mongoose.Schema({
+  name: String,
+  number: String,
 });
 
-// Lisää uusi puhelintieto
-app.post('/api/persons', (req, res) => {
+const Person = mongoose.model("Person", personSchema);
+
+app.get("/api/persons", (req, res, next) => {
+  Person.find({})
+    .then((persons) => {
+      res.json(persons);
+    })
+    .catch((error) => next(error));
+});
+
+app.post("/api/persons", (req, res, next) => {
   const body = req.body;
 
   if (!body.name || !body.number) {
-    return res.status(400).json({ error: 'name or number is missing' });
+    return res.status(400).json({ error: "name or number is missing" });
   }
 
-  if (persons.some(person => person.name === body.name)) {
-    return res.status(400).json({ error: 'name must be unique' });
-  }
-
-  // Generoidaan uniikki id
-  const id = Math.floor(Math.random() * 1000000);
-  const person = {
-    id: id,
+  const person = new Person({
     name: body.name,
-    number: body.number
-  };
+    number: body.number,
+  });
 
-  persons = persons.concat(person);
-  res.json(person);
+  person
+    .save()
+    .then((savedPerson) => {
+      res.json(savedPerson);
+    })
+    .catch((error) => next(error));
+});
+
+app.delete("/api/persons/:id", (req, res, next) => {
+  const { id } = req.params;
+  if (!id) {
+    return res.status(400).json({ error: "Missing or invalid id" });
+  }
+
+  Person.findByIdAndDelete(id)
+    .then((result) => {
+      if (result) {
+        res.status(204).end();
+      } else {
+        res.status(404).json({ error: "Person not found" });
+      }
+    })
+    .catch((error) => next(error));
+});
+
+app.use((req, res) => {
+  res.status(404).json({ error: "Not found" });
+});
+
+app.use((error, req, res, next) => {
+  console.error(error.message);
+
+  if (error.name === "CastError" && error.kind === "ObjectId") {
+    return res.status(400).json({ error: "Malformatted id" });
+  }
+
+  next(error);
 });
 
 app.listen(PORT, () => {
